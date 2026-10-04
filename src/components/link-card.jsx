@@ -1,74 +1,90 @@
-/* eslint-disable react/prop-types */
-import {Copy, Download, LinkIcon, Trash} from "lucide-react";
-import {Link} from "react-router-dom";
-import {Button} from "./ui/button";
+import { Copy, Trash, Link2, ExternalLink } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import useFetch from "@/hooks/use-fetch";
-import {deleteUrl} from "@/db/apiUrls";
-import {BeatLoader} from "react-spinners";
+import { deleteUrl } from "@/db/apiUrls";
+import { BeatLoader } from "react-spinners";
 
-const LinkCard = ({url = [], fetchUrls}) => {
-  const downloadImage = () => {
-    const imageUrl = url?.qr;
-    const fileName = url?.title; // Desired file name for the downloaded image
+const LinkCard = ({ url = {}, fetchUrls }) => {
+  const navigate = useNavigate();
+  const { loading: loadingDelete, fn: fnDelete } = useFetch(deleteUrl, url.id);
 
-    // Create an anchor element
-    const anchor = document.createElement("a");
-    anchor.href = imageUrl;
-    anchor.download = fileName;
+  const shortLink = `${window.location.origin}/${url.custom_url || url.short_url}`;
 
-    // Append the anchor to the body
-    document.body.appendChild(anchor);
-
-    // Trigger the download by simulating a click event
-    anchor.click();
-
-    // Remove the anchor from the document
-    document.body.removeChild(anchor);
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    await fnDelete();
+    fetchUrls();
   };
 
-  const {loading: loadingDelete, fn: fnDelete} = useFetch(deleteUrl, url.id);
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(shortLink);
+  };
 
   return (
-    <div className="flex flex-col md:flex-row gap-5 border p-4 bg-gray-900 rounded-lg">
-      <img
-        src={url?.qr}
-        className="h-32 object-contain ring ring-blue-500 self-start"
-        alt="qr code"
-      />
-      <Link to={`/link/${url?.id}`} className="flex flex-col flex-1">
-        <span className="text-3xl font-extrabold hover:underline cursor-pointer">
-          {url?.title}
-        </span>
-        <span className="text-2xl text-blue-400 font-bold hover:underline cursor-pointer">
-          https://trimrr.in/{url?.custom_url ? url?.custom_url : url.short_url}
-        </span>
-        <span className="flex items-center gap-1 hover:underline cursor-pointer">
-          <LinkIcon className="p-1" />
-          {url?.original_url}
-        </span>
-        <span className="flex items-end font-extralight text-sm flex-1">
-          {new Date(url?.created_at).toLocaleString()}
-        </span>
-      </Link>
-      <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          onClick={() =>
-            navigator.clipboard.writeText(`https://trimrr.in/${url?.short_url}`)
-          }
+    <div
+      className="neu-card-sm"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        padding: "16px 20px",
+        cursor: "pointer",
+        transition: "box-shadow 0.2s",
+      }}
+      onClick={() => navigate(`/link/${url.id}`)}
+    >
+      {/* QR Thumbnail */}
+      <div
+        className="neu-inset"
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 12,
+          overflow: "hidden",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {url.qr ? (
+          <img src={url.qr} alt="QR" style={{ width: 40, height: 40, objectFit: "contain" }} />
+        ) : (
+          <Link2 size={20} color="var(--text-muted)" />
+        )}
+      </div>
+
+      {/* Details */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {url.title}
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: "var(--primary)", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {shortLink}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <ExternalLink size={11} style={{ display: "inline", marginRight: 3 }} />
+          {url.original_url}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <button className="neu-btn-icon" onClick={handleCopy} title="Copy link">
+          <Copy size={15} />
+        </button>
+        <button
+          className="neu-btn-icon"
+          onClick={handleDelete}
+          disabled={loadingDelete}
+          title="Delete"
+          style={{ color: loadingDelete ? "var(--text-muted)" : "var(--danger)" }}
         >
-          <Copy />
-        </Button>
-        <Button variant="ghost" onClick={downloadImage}>
-          <Download />
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => fnDelete().then(() => fetchUrls())}
-          disable={loadingDelete}
-        >
-          {loadingDelete ? <BeatLoader size={5} color="white" /> : <Trash />}
-        </Button>
+          {loadingDelete ? <BeatLoader size={4} color="var(--danger)" /> : <Trash size={15} />}
+        </button>
       </div>
     </div>
   );

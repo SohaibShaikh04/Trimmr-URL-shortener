@@ -1,22 +1,32 @@
 /* eslint-disable react/prop-types */
+import { Navigate } from "react-router-dom";
+import { UrlState } from "@/context";
+import { BarLoader } from "react-spinners";
 
-import {useNavigate} from "react-router-dom";
-import {useEffect} from "react";
-import {UrlState} from "@/context";
-import {BarLoader} from "react-spinners";
+function RequireAuth({ children }) {
+  const { loading, isAuthenticated } = UrlState();
 
-function RequireAuth({children}) {
-  const navigate = useNavigate();
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "80vh",
+          background: "var(--bg)",
+        }}
+      >
+        <BarLoader width={220} color="var(--primary)" />
+      </div>
+    );
+  }
 
-  const {loading, isAuthenticated} = UrlState();
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
 
-  useEffect(() => {
-    if (!isAuthenticated && loading === false) navigate("/auth");
-  }, [isAuthenticated, loading]);
-
-  if (loading) return <BarLoader width={"100%"} color="#36d7b7" />;
-
-  if (isAuthenticated) return children;
+  return children;
 }
 
 export default RequireAuth;

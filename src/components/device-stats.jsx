@@ -1,41 +1,41 @@
-/* eslint-disable react/prop-types */
-import {PieChart, Pie, Cell, ResponsiveContainer} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+const COLORS = ["#3d6ef6", "#06b6d4", "#7c3aed", "#f59e0b"];
 
-export default function App({stats}) {
+export default function DeviceStats({ stats }) {
   const deviceCount = stats.reduce((acc, item) => {
-    if (!acc[item.device]) {
-      acc[item.device] = 0;
-    }
-    acc[item.device]++;
+    const key = item.device || "desktop";
+    acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
 
-  const result = Object.keys(deviceCount).map((device) => ({
-    device,
-    count: deviceCount[device],
-  }));
+  const data = Object.entries(deviceCount).map(([name, value]) => ({ name, value }));
 
   return (
-    <div style={{width: "100%", height: 300}}>
+    <div style={{ width: "100%", height: 180 }}>
       <ResponsiveContainer>
-        <PieChart width={700} height={400}>
+        <PieChart>
           <Pie
-            data={result}
-            labelLine={false}
-            label={({device, percent}) =>
-              `${device}: ${(percent * 100).toFixed(0)}%`
-            }
-            dataKey="count"
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={50}
+            outerRadius={75}
+            paddingAngle={3}
+            dataKey="value"
           >
-            {result.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
+            {data.map((_, index) => (
+              <Cell key={index} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
+          <Tooltip
+            contentStyle={{ background: "var(--bg)", border: "none", borderRadius: 10, boxShadow: "4px 4px 12px var(--shadow-dark)", fontSize: 12 }}
+          />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            formatter={(value) => <span style={{ fontSize: 11, color: "var(--text-secondary)", textTransform: "capitalize" }}>{value}</span>}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>

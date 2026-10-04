@@ -1,5 +1,5 @@
 import "./App.css";
-import {RouterProvider, createBrowserRouter} from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import UrlProvider from "./context";
 
 import AppLayout from "./layouts/app-layout";
@@ -9,6 +9,8 @@ import RedirectLink from "./pages/redirect-link";
 import LandingPage from "./pages/landing";
 import Dashboard from "./pages/dashboard";
 import LinkPage from "./pages/link";
+import AnalyticsPage from "./pages/analytics";
+import SettingsPage from "./pages/settings";
 import Auth from "./pages/auth";
 
 const router = createBrowserRouter([
@@ -28,6 +30,22 @@ const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/analytics",
+        element: (
+          <RequireAuth>
+            <AnalyticsPage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "/settings",
+        element: (
+          <RequireAuth>
+            <SettingsPage />
           </RequireAuth>
         ),
       },

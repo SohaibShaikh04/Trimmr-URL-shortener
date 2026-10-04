@@ -1,52 +1,56 @@
-import supabase, {supabaseUrl} from "./supabase";
+import apiClient, { setAuthToken, removeAuthToken, getAuthToken } from "./apiClient";
 
-export async function login({email, password}) {
-  const {data, error} = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) throw new Error(error.message);
-
-  return data;
+export async function login({ email, password }) {
+  try {
+    const data = await apiClient.post("/auth/login", { email, password });
+    if (data && data.token) {
+      setAuthToken(data.token);
+    }
+    return data.user;
+  } catch (error) {
+    throw new Error(error.message || "Login failed");
+  }
 }
 
-export async function signup({name, email, password, profilepic}) {
-  const fileName = `dp-${name.split(" ").join("-")}-${Math.random()}`;
+export async function signup(userData) {
+  // Destructure supporting both naming variations from form state
+  const { name, email, password, profile_pic, profilepic } = userData;
+  const file = profile_pic || profilepic;
 
-  const {error: storageError} = await supabase.storage
-    .from("profilepic")
-    .upload(fileName, profilepic);
+  try {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("password", password);
+    if (file) {
+      formData.append("profile_pic", file);
+    }
 
-  if (storageError) throw new Error(storageError.message);
-
-  const {data, error} = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { 
-        name,
-        profile_pic: `${supabaseUrl}/storage/v1/object/public/profilepic/${fileName}`,
-      },
-    },
-  });
-
-  if (error) throw new Error(error.message);
-
-  return data;
+    const data = await apiClient.post("/auth/register", formData);
+    if (data && data.token) {
+      setAuthToken(data.token);
+    }
+    return data.user;
+  } catch (error) {
+    throw new Error(error.message || "Registration failed");
+  }
 }
 
 export async function getCurrentUser() {
-  const {data: session, error} = await supabase.auth.getSession();
-  if (!session.session) return null;
+  const token = getAuthToken();
+  if (!token) return null;
 
-  // const {data, error} = await supabase.auth.getUser();
-
-  if (error) throw new Error(error.message);
-  return session.session?.user;
+  try {
+    const user = await apiClient.get("/auth/me");
+    return user;
+  } catch (error) {
+    // If the token is invalid or expired, clear it
+    removeAuthToken();
+    return null;
+  }
 }
 
 export async function logout() {
-  const {error} = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
+  removeAuthToken();
 }
+export default { login, signup, getCurrentUser, logout };
